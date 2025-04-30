@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"fmt"
 	"junior/internal/model"
 	"junior/pkg/logger"
 
@@ -96,4 +97,42 @@ func (r *PersonRepository) Delete(id int) error {
 
 	logger.Log.Debug("Successfully deleted person with ID: ", id)
 	return nil
+}
+
+func (r *PersonRepository) GetFiltered(gender, nationality string, page, limit int) ([]model.Person, error) {
+	query := `SELECT id, name, surname, patronymic, age, gender, nationality FROM persons WHERE 1=1`
+	args := []interface{}{}
+	argIdx := 1
+
+	if gender != "" {
+		query += fmt.Sprintf(" AND gender=$%d", argIdx)
+		args = append(args, gender)
+		argIdx++
+	}
+	if nationality != "" {
+		query += fmt.Sprintf(" AND nationality=$%d", argIdx)
+		args = append(args, nationality)
+		argIdx++
+	}
+
+	offset := (page - 1) * limit
+	query += fmt.Sprintf(" LIMIT $%d OFFSET $%d", argIdx, argIdx+1)
+	args = append(args, limit, offset)
+
+	rows, err := r.db.Query(query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var people []model.Person
+	for rows.Next() {
+		var p model.Person
+		if err := rows.Scan(&p.ID, &p.Name, &p.Surname, &p.Patronymic, &p.Age, &p.Gender, &p.Nationality); err != nil {
+			return nil, err
+		}
+		people = append(people, p)
+	}
+
+	return people, nil
 }

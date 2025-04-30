@@ -43,3 +43,7 @@ func (s *PersonService) UpdatePerson(id int, p model.Person) (model.Person, erro
 func (s *PersonService) DeletePerson(id int) error {
     return s.repo.Delete(id)
 }
+
+func (s *PersonService) GetFilteredPeople(gender, nationality string, page, limit int) ([]model.Person, error) {
+	return s.repo.GetFiltered(gender, nationality, page, limit)
+}

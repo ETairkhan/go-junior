@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"junior/internal/model"
 	"junior/internal/service"
+	"junior/pkg/logger"
 	"net/http"
 	"strconv"
 
@@ -37,16 +38,37 @@ func (h *Handler) createPerson(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	logger.Log.Info("Successfully created person with ID: ", newPerson.ID)
 	json.NewEncoder(w).Encode(newPerson)
+
 }
 
 func (h *Handler) getPeople(w http.ResponseWriter, r *http.Request) {
-	people, err := h.service.GetPeople()
+	gender := r.URL.Query().Get("gender")
+	nationality := r.URL.Query().Get("nationality")
+
+	pageStr := r.URL.Query().Get("page")
+	limitStr := r.URL.Query().Get("limit")
+
+	page, err := strconv.Atoi(pageStr)
+	if err != nil || page < 1 {
+		page = 1
+	}
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil || limit < 1 {
+		limit = 10
+	}
+
+	people, err := h.service.GetFilteredPeople(gender, nationality, page, limit)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	json.NewEncoder(w).Encode(people)
+
+	logger.Log.Infof("Successfully retrieved %d people (filters: gender=%s, nationality=%s, page=%d, limit=%d)",
+	len(people), gender, nationality, page, limit)
+json.NewEncoder(w).Encode(people)
+
 }
 
 func (h *Handler) getPersonByID(w http.ResponseWriter, r *http.Request) {
@@ -61,7 +83,9 @@ func (h *Handler) getPersonByID(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	json.NewEncoder(w).Encode(person)
+	logger.Log.Infof("Successfully retrieved person with ID: %d", id)
+json.NewEncoder(w).Encode(person)
+
 }
 
 func (h *Handler) updatePerson(w http.ResponseWriter, r *http.Request) {
@@ -81,7 +105,9 @@ func (h *Handler) updatePerson(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	json.NewEncoder(w).Encode(updatedPerson)
+	logger.Log.Infof("Successfully updated person with ID: %d", id)
+json.NewEncoder(w).Encode(updatedPerson)
+
 }
 
 func (h *Handler) deletePerson(w http.ResponseWriter, r *http.Request) {
@@ -96,5 +122,7 @@ func (h *Handler) deletePerson(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	w.WriteHeader(http.StatusNoContent)
+	logger.Log.Infof("Successfully deleted person with ID: %d", id)
+w.WriteHeader(http.StatusNoContent)
+
 }
