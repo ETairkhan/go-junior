@@ -2,7 +2,10 @@ package main
 
 import (
 	"junior/internal/config"
+	"junior/internal/db"
 	"junior/internal/handler"
+	"junior/internal/repository"
+	"junior/internal/service"
 	"junior/pkg/logger"
 	"log"
 	"net/http"
@@ -11,13 +14,22 @@ import (
 )
 
 func main() {
-	config.LoadConfig()
+	cfg := config.LoadConfig()
+	dbConn, err := db.Connect(cfg)
+	if err != nil {
+		log.Fatalf("Failed to connect to database: %v", err)
+	}
+	defer dbConn.Close()
+
 	logger.InitLogger()
 
-	r := mux.NewRouter()
+	personRepo := repository.NewPersonRepository(dbConn)
+	personService := service.NewPersonService(personRepo)
 
+	r := mux.NewRouter()
+	handler := handler.NewHandler(personService)
 	handler.InitRoutes(r)
 
-	log.Println("Server started on port", config.GetEnv("API_PORT"))
-	http.ListenAndServe(":"+config.GetEnv("API_PORT"), r)
+	log.Println("Server started on port", cfg.APIPort)
+	log.Fatal(http.ListenAndServe(":"+cfg.APIPort, r))
 }

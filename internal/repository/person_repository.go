@@ -2,8 +2,6 @@ package repository
 
 import (
 	"database/sql"
-	"fmt"
-	"junior/internal/config"
 	"junior/internal/model"
 	"junior/pkg/logger"
 
@@ -14,47 +12,7 @@ type PersonRepository struct {
 	db *sql.DB
 }
 
-func NewPersonRepository() *PersonRepository {
-	// Получаем значения из конфигурации
-	host := config.GetEnv("DB_HOST")
-	port := config.GetEnv("DB_PORT")
-	user := config.GetEnv("DB_USER")
-	password := config.GetEnv("DB_PASSWORD")
-	dbname := config.GetEnv("DB_NAME")
-
-
-
-	// Проверяем, что все необходимые значения установлены
-	if host == "" || port == "" || dbname == "" {
-		logger.Log.Error("Missing required database configuration")
-		panic("Missing required database configuration")
-	}
-
-	// Формируем строку подключения
-	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
-		host,
-		port,
-		user,
-		password,
-		dbname,
-	)
-
-	logger.Log.Debug("Connecting to database with DSN: ", dsn)
-
-	db, err := sql.Open("postgres", dsn)
-	if err != nil {
-		logger.Log.Error("Failed to connect to database: ", err)
-		panic(err)
-	}
-
-	// Проверяем подключение
-	err = db.Ping()
-	if err != nil {
-		logger.Log.Error("Failed to ping database: ", err)
-		panic(err)
-	}
-
-	logger.Log.Info("Successfully connected to database")
+func NewPersonRepository(db *sql.DB) *PersonRepository {
 	return &PersonRepository{db: db}
 }
 
