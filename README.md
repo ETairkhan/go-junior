@@ -1,10 +1,5 @@
 # go-junior
 
-write :
-```go
-go mod tidy
-```
-
 Создать .env file где будет информации с Postgresql:
 
 ```bash
